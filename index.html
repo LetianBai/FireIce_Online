@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="screen-orientation" content="landscape">
+    <meta name="orientation" content="landscape">
+    <title>FireIce Online - 森林冰火人联机版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+            background: #0a0a15;
+            font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #game-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        #top-bar {
+            height: 44px;
+            background: linear-gradient(180deg, rgba(30, 40, 70, 0.98) 0%, rgba(20, 25, 45, 0.95) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 100;
+            border-bottom: 1px solid #3d7ecc;
+            flex-shrink: 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #top-bar .logo {
+            color: #4a9eff;
+            font-size: 16px;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
+        }
+
+        #top-bar .room-info {
+            color: #7fdbca;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #top-bar .room-code {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.4) 0%, rgba(42, 122, 204, 0.4) 100%);
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid #4a9eff;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        #top-bar .room-code:hover {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.6) 0%, rgba(42, 122, 204, 0.6) 100%);
+            transform: scale(1.05);
+        }
+
+        #top-bar .room-code:active {
+            transform: scale(0.95);
+        }
+
+        #top-bar .btn {
+            padding: 6px 14px;
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.3) 0%, rgba(42, 122, 204, 0.3) 100%);
+            border: 1px solid #4a9eff;
+            border-radius: 6px;
+            color: #4a9eff;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        #top-bar .btn:hover {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.5) 0%, rgba(42, 122, 204, 0.5) 100%);
+        }
+
+        #game-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            position: relative;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        #game-area {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        #game-area ruffle-player {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 800px;
+            max-height: 600px;
+            object-fit: contain;
+        }
+
+        #game-area .loading {
+            color: #4a9eff;
+            font-size: 14px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #virtual-keys {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 160px;
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 25px;
+            pointer-events: none;
+            z-index: 80;
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+        }
+
+        #virtual-keys.hidden {
+            display: none;
+        }
+
+        .key-group {
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .key-group-p1 {
+            align-items: flex-end;
+        }
+
+        .key-group-p2 {
+            align-items: flex-end;
+        }
+
+        .virtual-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(90, 170, 255, 0.5) 0%, rgba(40, 100, 200, 0.5) 100%);
+            border: 2px solid rgba(100, 180, 255, 0.6);
+            color: #fff;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.3),
+                inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .virtual-btn:active, .virtual-btn.pressed {
+            background: linear-gradient(145deg, rgba(120, 200, 255, 0.8) 0%, rgba(60, 140, 240, 0.8) 100%);
+            transform: scale(0.92);
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.4),
+                inset 0 1px 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .virtual-btn.jump {
+            width: 85px;
+            height: 85px;
+            font-size: 26px;
+            background: linear-gradient(145deg, rgba(255, 150, 50, 0.5) 0%, rgba(200, 80, 30, 0.5) 100%);
+            border-color: rgba(255, 180, 100, 0.6);
+        }
+
+        .virtual-btn.jump:active, .virtual-btn.jump.pressed {
+            background: linear-gradient(145deg, rgba(255, 180, 80, 0.8) 0%, rgba(240, 120, 60, 0.8) 100%);
+        }
+
+        .key-row {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .key-horizontal {
+            display: flex;
+            gap: 15px;
+        }
+
+        .key-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 25, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            backdrop-filter: blur(5px);
+        }
+
+        #overlay.hidden {
+            display: none;
+        }
+
+        #lobby {
+            background: linear-gradient(180deg, rgba(30, 40, 70, 0.98) 0%, rgba(20, 28, 50, 0.98) 100%);
+            padding: 28px;
+            border-radius: 20px;
+            border: 2px solid #4a9eff;
+            text-align: center;
+            width: 92%;
+            max-width: 360px;
+            max-height: 90%;
+            overflow-y: auto;
+            box-shadow: 
+                0 15px 50px rgba(0, 0, 0, 0.5),
+                0 0 30px rgba(74, 158, 255, 0.1);
+        }
+
+        #lobby h1 {
+            color: #4a9eff;
+            margin-bottom: 24px;
+            font-size: 22px;
+            text-shadow: 0 0 15px rgba(74, 158, 255, 0.5);
+        }
+
+        .input-group {
+            margin: 14px 0;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            color: #8ab4f8;
+            font-size: 13px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #2a4a7a;
+            border-radius: 10px;
+            background: rgba(13, 26, 48, 0.8);
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #4a9eff;
+            box-shadow: 0 0 10px rgba(74, 158, 255, 0.3);
+        }
+
+        .file-input-wrapper {
+            margin: 14px 0;
+            padding: 14px;
+            border: 2px dashed rgba(74, 158, 255, 0.5);
+            border-radius: 10px;
+            text-align: center;
+            box-sizing: border-box;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .file-input-wrapper:hover {
+            border-color: #4a9eff;
+            background: rgba(74, 158, 255, 0.05);
+        }
+
+        .file-input-wrapper p {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            width: 100%;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        button {
+            padding: 14px 28px;
+            margin: 8px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4a9eff 0%, #2a7acc 100%);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(74, 158, 255, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 158, 255, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        #player-list {
+            position: absolute;
+            top: 54px;
+            right: 10px;
+            background: rgba(20, 25, 45, 0.95);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #4a9eff;
+            color: #fff;
+            font-size: 12px;
+            max-width: 140px;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #player-list.hidden {
+            display: none;
+        }
+
+        #player-list h4 {
+            color: #4a9eff;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        #player-list ul {
+            list-style: none;
+        }
+
+        #player-list li {
+            padding: 6px 0;
+            border-bottom: 1px solid #333;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        #player-list li:last-child {
+            border-bottom: none;
+        }
+
+        #settings-btn {
+            position: absolute;
+            top: 54px;
+            left: 10px;
+            padding: 10px 14px;
+            background: rgba(74, 158, 255, 0.2);
+            border: 1px solid #4a9eff;
+            border-radius: 10px;
+            color: #4a9eff;
+            cursor: pointer;
+            z-index: 50;
+            font-size: 12px;
+            pointer-events: auto;
+            transition: all 0.2s;
+        }
+
+        #settings-btn:hover {
+            background: rgba(74, 158, 255, 0.4);
+        }
+
+        #settings-btn.hidden {
+            display: none;
+        }
+
+        #settings-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(180deg, rgba(30, 40, 70, 0.98) 0%, rgba(20, 28, 50, 0.98) 100%);
+            padding: 24px;
+            border-radius: 20px;
+            border: 2px solid #4a9eff;
+            z-index: 300;
+            width: 94%;
+            max-width: 400px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+            display: none;
+        }
+
+        #settings-panel.show {
+            display: block;
+            animation: panelIn 0.25s ease;
+        }
+
+        @keyframes panelIn {
+            from { opacity: 0; transform: translate(-50%, -45%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        #settings-panel h2 {
+            color: #4a9eff;
+            margin-bottom: 18px;
+            font-size: 17px;
+            text-shadow: 0 0 10px rgba(74, 158, 255, 0.3);
+        }
+
+        .keybind-section {
+            margin: 16px 0;
+            padding: 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+
+        .keybind-section h3 {
+            color: #8ab4f8;
+            font-size: 13px;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .keybind-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .keybind-row span {
+            color: #ccc;
+            font-size: 13px;
+        }
+
+        .keybind-row input[type="text"] {
+            width: 65px;
+            text-align: center;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 14px 0;
+            color: #ccc;
+            font-size: 13px;
+        }
+
+        .toggle-row input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #4a9eff;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .slider-row span {
+            color: #ccc;
+            font-size: 12px;
+            min-width: 50px;
+        }
+
+        .slider-row input[type="range"] {
+            flex: 1;
+            margin: 0 10px;
+            accent-color: #4a9eff;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .btn-row button {
+            flex: 1;
+        }
+
+        .save-slot {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px 0;
+            text-align: left;
+        }
+
+        .save-slot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .save-slot-name {
+            color: #4a9eff;
+            font-weight: 500;
+        }
+
+        .save-slot-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .save-slot-actions button {
+            padding: 4px 10px;
+            font-size: 11px;
+            margin: 0;
+        }
+
+        .save-slot-info {
+            color: #888;
+            font-size: 11px;
+        }
+
+        .mode-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-left: 6px;
+        }
+
+        .mode-single {
+            background: rgba(80, 200, 120, 0.3);
+            color: #50c878;
+        }
+
+        .mode-multi {
+            background: rgba(255, 150, 50, 0.3);
+            color: #ff9632;
+        }
+
+        #message {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 80, 80, 0.95);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            z-index: 400;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #message.show {
+            display: block;
+            animation: slideDown 0.25s ease;
+        }
+
+        #message.success {
+            background: linear-gradient(135deg, #50c878 0%, #3da35d 100%);
+        }
+
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-100%); }
+            to { transform: translateX(-50%) translateY(0); }
+        }
+
+        .landscape-hint {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0a15;
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #4a9eff;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .landscape-hint.show {
+            display: flex;
+        }
+
+        .landscape-hint-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: rotateHint 2s ease infinite;
+        }
+
+        @keyframes rotateHint {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+
+        @media (min-width: 768px) {
+            #game-wrapper {
+                padding-top: 0;
+            }
+            #virtual-keys {
+                height: 180px;
+                padding: 20px 40px;
+            }
+            .virtual-btn {
+                width: 75px;
+                height: 75px;
+            }
+            .virtual-btn.jump {
+                width: 95px;
+                height: 95px;
+            }
+        }
+
+        @media (max-height: 500px) {
+            #virtual-keys {
+                height: 120px;
+            }
+            .virtual-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+            .virtual-btn.jump {
+                width: 60px;
+                height: 60px;
+            }
+        }
+
+        @media (orientation: portrait) and (max-width: 600px) {
+            .landscape-hint.show {
+                display: flex;
+            }
+            #game-container {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="landscape-hint" id="landscape-hint">
+        <div class="landscape-hint-icon">📱</div>
+        <h2>请横屏体验</h2>
+        <p>旋转设备以获得最佳游戏体验</p>
+    </div>
+
+    <div id="game-container">
+        <div id="top-bar">
+            <div class="logo">🏰 森林冰火人</div>
+            <div class="room-info" id="room-display">
+                <span id="room-code-text" class="room-code" onclick="copyRoomCode()" title="点击复制房间号"></span>
+            </div>
+            <button class="btn" id="lobby-btn" onclick="toggleLobby()">🏠 大厅</button>
+        </div>
+
+        <div id="game-wrapper">
+            <div id="game-area">
+                <div class="loading">正在加载游戏...</div>
+            </div>
+
+            <button id="settings-btn" onclick="toggleSettings()">⚙️ 设置</button>
+
+            <div id="player-list" class="hidden">
+                <h4>👥 玩家</h4>
+                <ul id="players"></ul>
+            </div>
+
+            <div id="virtual-keys" class="hidden">
+                <div class="key-group key-group-p1">
+                    <div class="key-row">
+                        <div class="key-horizontal">
+                            <div class="virtual-btn" data-action="left-p2" data-player="p1">
+                                ◀<span class="key-label">P1</span>
+                            </div>
+                            <div class="virtual-btn" data-action="right-p2" data-player="p1">▶</div>
+                        </div>
+                    </div>
+                    <div class="virtual-btn jump" data-action="jump-p2" data-player="p1">▲</div>
+                </div>
+                <div class="key-group key-group-p2">
+                    <div class="virtual-btn jump" data-action="jump-p2" data-player="p2">▲</div>
+                    <div class="key-row">
+                        <div class="key-horizontal">
+                            <div class="virtual-btn" data-action="left-p2" data-player="p2">
+                                ◀<span class="key-label">P2</span>
+                            </div>
+                            <div class="virtual-btn" data-action="right-p2" data-player="p2">▶</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="overlay">
+            <div id="lobby">
+                <h1>🏰 森林冰火人</h1>
+                <div class="input-group">
+                    <label>你的名字</label>
+                    <input type="text" id="username" placeholder="输入名字 (留空随机生成)" maxlength="10" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>房间号 (留空创建新房)</label>
+                    <input type="text" id="room-code" placeholder="输入房间号加入" maxlength="6" autocomplete="off">
+                </div>
+                <div class="file-input-wrapper">
+                    <p>自定义SWF文件 (可选)</p>
+                    <input type="file" id="swf-file" accept=".swf">
+                </div>
+                <button class="btn-primary" onclick="joinRoom()" style="width:100%;margin:14px 0;">进入游戏</button>
+            </div>
+        </div>
+
+        <div id="settings-panel">
+            <h2>⚙️ 按键设置</h2>
+            
+            <div class="keybind-section">
+                <h3>玩家1 (P1) - WASD</h3>
+                <div class="keybind-row">
+                    <span>← 左</span>
+                    <input type="text" id="key-left" value="A" readonly onclick="bindKey('left')">
+                </div>
+                <div class="keybind-row">
+                    <span>→ 右</span>
+                    <input type="text" id="key-right" value="D" readonly onclick="bindKey('right')">
+                </div>
+                <div class="keybind-row">
+                    <span>↑ 跳</span>
+                    <input type="text" id="key-jump" value="W" readonly onclick="bindKey('jump')">
+                </div>
+            </div>
+
+            <div class="keybind-section">
+                <h3>玩家2 (P2) - 方向键</h3>
+                <div class="keybind-row">
+                    <span>← 左</span>
+                    <input type="text" id="key-left-p2" value="←" readonly onclick="bindKey('left-p2')">
+                </div>
+                <div class="keybind-row">
+                    <span>→ 右</span>
+                    <input type="text" id="key-right-p2" value="→" readonly onclick="bindKey('right-p2')">
+                </div>
+                <div class="keybind-row">
+                    <span>↑ 跳</span>
+                    <input type="text" id="key-jump-p2" value="↑" readonly onclick="bindKey('jump-p2')">
+                </div>
+            </div>
+
+            <div class="keybind-section">
+                <h3>通用</h3>
+                <div class="keybind-row">
+                    <span>确认</span>
+                    <input type="text" id="key-enter" value="空格" readonly onclick="bindKey('enter')">
+                </div>
+            </div>
+
+            <h2 style="margin-top:20px;">🎮 虚拟按键</h2>
+            <div class="toggle-row">
+                <span>显示虚拟按键</span>
+                <input type="checkbox" id="show-virtual-keys" checked onchange="saveSettings()">
+            </div>
+            <div class="slider-row">
+                <span>透明度</span>
+                <input type="range" id="key-opacity" min="0.1" max="1" step="0.1" value="0.7" onchange="updateKeyStyle()">
+            </div>
+            <div class="slider-row">
+                <span>大小</span>
+                <input type="range" id="key-size" min="40" max="100" step="5" value="65" onchange="updateKeyStyle()">
+            </div>
+
+            <h2 style="margin-top:20px;">💾 存档管理</h2>
+            <div id="save-slots"></div>
+            <div class="btn-row">
+                <button class="btn-primary" onclick="showSaveDialog()">新建存档</button>
+            </div>
+
+            <h2 style="margin-top:20px;">📁 加载SWF</h2>
+            <div class="file-input-wrapper">
+                <p>选择SWF游戏文件</p>
+                <input type="file" id="swf-file-settings" accept=".swf">
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-primary" onclick="saveSettings()">保存设置</button>
+                <button class="btn-primary" onclick="toggleSettings()" style="background:#555;">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+        var RUFFLE_CDNS = [
+            'https://cdn.jsdelivr.net/npm/@ruffle-rs/ruffle@0.1.0-nightly.2024.12.17/ruffle.js',
+            'https://unpkg.com/@ruffle-rs/ruffle@0.1.0-nightly.2024.12.17/ruffle.js'
+        ];
+
+        var FUNNY_NAMES = [
+            '冰火侠', '冰雪王子', '火焰侠', '萌新玩家', '小冰', '小火',
+            '森林冒险家', '闯关达人', '手残党', '大神', '皮皮虾', '冰糖葫芦',
+            '雪人', '火娃', '水娃', '挑战者', '通关狂魔', '萌萌哒', '小可爱',
+            '森林守护者', '冰火双雄', '闯关小能手', '游戏达人', '快乐玩家'
+        ];
+
+        var SAVE_MODES = {
+            SINGLE: 'single',
+            MULTI: 'multi'
+        };
+
+        var SAVE_MODE_INFO = {
+            'single': { name: '单人模式', badge: 'mode-single' },
+            'multi': { name: '联机模式', badge: 'mode-multi' }
+        };
+
+        var gameEmbed = null;
+        var ws = null;
+        var roomCode = '';
+        var playerId = '';
+        var gameStarted = false;
+        var currentSaveSlot = null;
+        
+        var keyBindings = {
+            left: 'KeyA',
+            right: 'KeyD',
+            jump: 'KeyW',
+            'left-p2': 'ArrowLeft',
+            'right-p2': 'ArrowRight',
+            'jump-p2': 'ArrowUp',
+            enter: 'Space'
+        };
+        
+        var keyDisplayMap = {
+            'KeyA': 'A', 'KeyD': 'D', 'KeyW': 'W',
+            'ArrowLeft': '←', 'ArrowRight': '→', 'ArrowUp': '↑',
+            'Space': '空格'
+        };
+        
+        var virtualKeyMap = {
+            'left-p2': 'ArrowLeft',
+            'right-p2': 'ArrowRight',
+            'jump-p2': 'ArrowUp'
+        };
+        
+        var activeKeys = {};
+        var currentSwfUrl = 'e46eda9b1004c280aa1ce7e8396d1513d2a98376fbc4f82c2ace5df73fed758e.swf';
+
+        var SERVER_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'ws://localhost:8080' 
+            : 'wss://' + window.location.host;
+
+        function initGame() {
+            var gameArea = document.getElementById('game-area');
+            checkOrientation();
+            window.addEventListener('orientationchange', checkOrientation);
+            window.addEventListener('resize', checkOrientation);
+            
+            loadRuffle().then(function() {
+                loadSwf(currentSwfUrl);
+                setupInputHandlers();
+                setupVirtualKeys();
+                loadSettings();
+                loadSaveSlots();
+            }).catch(function(error) {
+                console.error('初始化失败:', error);
+                gameArea.innerHTML = '<div class="loading" style="color:#ff6b6b;">加载失败: ' + error.message + '</div>';
+            });
+        }
+
+        function checkOrientation() {
+            var hint = document.getElementById('landscape-hint');
+            if (window.innerWidth < window.innerHeight && window.innerWidth < 768) {
+                hint.classList.add('show');
+            } else {
+                hint.classList.remove('show');
+            }
+        }
+
+        function loadRuffle() {
+            return new Promise(function(resolve, reject) {
+                if (window.RufflePlayer) {
+                    resolve();
+                    return;
+                }
+                
+                var currentIndex = 0;
+                
+                function tryLoadNext() {
+                    if (currentIndex >= RUFFLE_CDNS.length) {
+                        reject(new Error('Ruffle加载失败，请检查网络'));
+                        return;
+                    }
+                    
+                    var script = document.createElement('script');
+                    script.src = RUFFLE_CDNS[currentIndex];
+                    script.onload = function() {
+                        console.log('Ruffle loaded:', RUFFLE_CDNS[currentIndex]);
+                        resolve();
+                    };
+                    script.onerror = function() {
+                        currentIndex++;
+                        tryLoadNext();
+                    };
+                    document.head.appendChild(script);
+                }
+                
+                tryLoadNext();
+            });
+        }
+
+        function loadSwf(url) {
+            var gameArea = document.getElementById('game-area');
+            
+            if (!window.RufflePlayer) {
+                gameArea.innerHTML = '<div class="loading">正在加载引擎...</div>';
+                return;
+            }
+
+            try {
+                var ruffle = window.RufflePlayer.newest();
+                var player = ruffle.createPlayer();
+                player.setAttribute('width', '100%');
+                player.setAttribute('height', '100%');
+                
+                gameArea.innerHTML = '';
+                gameArea.appendChild(player);
+                
+                player.load(url).then(function() {
+                    console.log('SWF加载成功');
+                    gameEmbed = player;
+                    setupFlashInput(player);
+                }).catch(function(e) {
+                    console.error('SWF加载失败:', e);
+                    gameArea.innerHTML = '<div class="loading" style="color:#ff6b6b;">游戏加载失败</div>';
+                });
+            } catch (e) {
+                console.error('创建播放器失败:', e);
+            }
+        }
+
+        function setupFlashInput(player) {
+            if (!player) return;
+            
+            window.flashSendKey = function(keyCode, isDown) {
+                try {
+                    var evt = new KeyboardEvent(isDown ? 'keydown' : 'keyup', {
+                        key: keyCode,
+                        code: keyCode,
+                        keyCode: keyCode.charCodeAt(0),
+                        which: keyCode.charCodeAt(0),
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    player.dispatchEvent(evt);
+                } catch (e) {
+                    console.warn('按键发送失败:', e);
+                }
+            };
+        }
+
+        function setupInputHandlers() {
+            document.addEventListener('keydown', function(e) {
+                if (e.target.tagName === 'INPUT') return;
+                
+                var action = getKeyAction(e.code);
+                if (action && !activeKeys[action]) {
+                    activeKeys[action] = true;
+                    handleKeyAction(action, true, e.code);
+                    updateVirtualKeyState(action, true);
+                }
+            });
+
+            document.addEventListener('keyup', function(e) {
+                if (e.target.tagName === 'INPUT') return;
+                
+                var action = getKeyAction(e.code);
+                if (action) {
+                    delete activeKeys[action];
+                    handleKeyAction(action, false, e.code);
+                    updateVirtualKeyState(action, false);
+                }
+            });
+        }
+
+        function setupVirtualKeys() {
+            var buttons = document.querySelectorAll('.virtual-btn');
+            for (var i = 0; i < buttons.length; i++) {
+                (function(btn) {
+                    var action = btn.getAttribute('data-action');
+                    
+                    btn.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        var keyCode = virtualKeyMap[action];
+                        handleKeyAction(action, true, keyCode);
+                        btn.classList.add('pressed');
+                    }, { passive: false });
+                    
+                    btn.addEventListener('touchend', function(e) {
+                        e.preventDefault();
+                        var keyCode = virtualKeyMap[action];
+                        handleKeyAction(action, false, keyCode);
+                        btn.classList.remove('pressed');
+                    }, { passive: false });
+                    
+                    btn.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        var keyCode = virtualKeyMap[action];
+                        handleKeyAction(action, true, keyCode);
+                        btn.classList.add('pressed');
+                    });
+                    
+                    btn.addEventListener('mouseup', function(e) {
+                        e.preventDefault();
+                        var keyCode = virtualKeyMap[action];
+                        handleKeyAction(action, false, keyCode);
+                        btn.classList.remove('pressed');
+                    });
+                    
+                    btn.addEventListener('mouseleave', function(e) {
+                        var keyCode = virtualKeyMap[action];
+                        handleKeyAction(action, false, keyCode);
+                        btn.classList.remove('pressed');
+                    });
+                })(buttons[i]);
+            }
+        }
+
+        function updateVirtualKeyState(action, isPressed) {
+            var buttons = document.querySelectorAll('.virtual-btn[data-action="' + action + '"]');
+            for (var i = 0; i < buttons.length; i++) {
+                if (isPressed) {
+                    buttons[i].classList.add('pressed');
+                } else {
+                    buttons[i].classList.remove('pressed');
+                }
+            }
+        }
+
+        function getKeyAction(code) {
+            for (var action in keyBindings) {
+                if (keyBindings.hasOwnProperty(action)) {
+                    if (code === keyBindings[action]) return action;
+                }
+            }
+            return null;
+        }
+
+        function handleKeyAction(action, isDown, keyCode) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'key',
+                    action: action,
+                    down: isDown,
+                    playerId: playerId,
+                    keyCode: keyCode
+                }));
+            }
+            
+            if (gameEmbed && window.flashSendKey) {
+                window.flashSendKey(keyCode, isDown);
+            }
+        }
+
+        function connectWebSocket() {
+            if (ws) ws.close();
+            
+            ws = new WebSocket(SERVER_URL);
+
+            ws.onopen = function() { console.log('已连接'); };
+            ws.onmessage = function(e) { handleServerMessage(JSON.parse(e.data)); };
+            ws.onerror = function() { showMessage('无法连接服务器'); };
+            ws.onclose = function() { if (gameStarted) showMessage('连接断开'); };
+        }
+
+        function handleServerMessage(data) {
+            switch (data.type) {
+                case 'joined':
+                    roomCode = data.roomCode;
+                    playerId = data.playerId;
+                    gameStarted = true;
+                    updateUI();
+                    if (currentSaveSlot) {
+                        saveGameData({ roomCode: roomCode, mode: SAVE_MODES.MULTI });
+                    }
+                    break;
+                case 'players':
+                    updatePlayerList(data.players);
+                    break;
+                case 'key':
+                    if (data.playerId !== playerId && data.keyCode) {
+                        handleKeyAction(data.action, data.down, data.keyCode);
+                        updateVirtualKeyState(data.action, data.down);
+                    }
+                    break;
+                case 'error':
+                    showMessage(data.message);
+                    break;
+                case 'roomClosed':
+                    showMessage('房间已关闭');
+                    leaveRoom();
+                    break;
+            }
+        }
+
+        function getRandomName() {
+            var index = Math.floor(Math.random() * FUNNY_NAMES.length);
+            var num = Math.floor(Math.random() * 999);
+            return FUNNY_NAMES[index] + num;
+        }
+
+        function joinRoom() {
+            var playerName = document.getElementById('username').value.trim();
+            if (!playerName) {
+                playerName = getRandomName();
+            }
+            var inputRoomCode = document.getElementById('room-code').value.trim().toUpperCase();
+            
+            var swfFile = document.getElementById('swf-file').files[0];
+            if (swfFile) {
+                currentSwfUrl = URL.createObjectURL(swfFile);
+                loadSwf(currentSwfUrl);
+            }
+
+            connectWebSocket();
+
+            var check = setInterval(function() {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    clearInterval(check);
+                    ws.send(JSON.stringify({
+                        type: 'join',
+                        playerName: playerName,
+                        roomCode: inputRoomCode || null,
+                        swfUrl: currentSwfUrl
+                    }));
+                }
+            }, 100);
+
+            setTimeout(function() { clearInterval(check); }, 5000);
+        }
+
+        function leaveRoom() {
+            if (ws) { ws.send(JSON.stringify({ type: 'leave', playerId: playerId })); ws.close(); }
+            gameStarted = false;
+            roomCode = '';
+            playerId = '';
+            showLobby();
+        }
+
+        function showLobby() {
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('room-display').innerHTML = '<span id="room-code-text" class="room-code" onclick="copyRoomCode()" title="点击复制房间号"></span>';
+            document.getElementById('player-list').classList.add('hidden');
+            document.getElementById('settings-btn').classList.add('hidden');
+            document.getElementById('virtual-keys').classList.add('hidden');
+        }
+
+        function hideLobby() {
+            document.getElementById('overlay').classList.add('hidden');
+        }
+
+        function toggleLobby() {
+            if (gameStarted) {
+                leaveRoom();
+            } else {
+                showLobby();
+            }
+        }
+
+        function updateUI() {
+            hideLobby();
+            document.getElementById('room-display').innerHTML = '房间: <span class="room-code" onclick="copyRoomCode()" title="点击复制">' + roomCode + '</span>';
+            document.getElementById('player-list').classList.remove('hidden');
+            document.getElementById('settings-btn').classList.remove('hidden');
+            
+            var showVirtual = document.getElementById('show-virtual-keys').checked;
+            if (showVirtual) {
+                document.getElementById('virtual-keys').classList.remove('hidden');
+            }
+        }
+
+        function updatePlayerList(players) {
+            var list = document.getElementById('players');
+            var html = '';
+            for (var i = 0; i < players.length; i++) {
+                var p = players[i];
+                html += '<li>' + p.name + (p.id === playerId ? ' (你)' : '') + (p.isHost ? ' 👑' : '') + '</li>';
+            }
+            list.innerHTML = html;
+        }
+
+        function copyRoomCode() {
+            if (!roomCode) return;
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(roomCode).then(function() {
+                    showMessage('房间号已复制: ' + roomCode, true);
+                }).catch(function() {
+                    fallbackCopy(roomCode);
+                });
+            } else {
+                fallbackCopy(roomCode);
+            }
+        }
+
+        function fallbackCopy(text) {
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showMessage('房间号已复制: ' + text, true);
+            } catch (e) {
+                showMessage('复制失败，请手动复制: ' + text);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function showMessage(msg, isSuccess) {
+            var el = document.getElementById('message');
+            el.textContent = msg;
+            el.classList.remove('success');
+            if (isSuccess) {
+                el.classList.add('success');
+            }
+            el.classList.add('show');
+            setTimeout(function() { el.classList.remove('show'); }, 3000);
+        }
+
+        function toggleSettings() {
+            document.getElementById('settings-panel').classList.toggle('show');
+        }
+
+        function bindKey(action) {
+            var input = document.getElementById('key-' + action);
+            input.value = '...';
+            
+            var handler = function(e) {
+                e.preventDefault();
+                var code = e.code;
+                keyBindings[action] = code;
+                input.value = keyDisplayMap[code] || code;
+                document.removeEventListener('keydown', handler);
+                saveSettings();
+            };
+            
+            document.addEventListener('keydown', handler);
+            setTimeout(function() { document.removeEventListener('keydown', handler); }, 5000);
+        }
+
+        function updateKeyStyle() {
+            var opacity = document.getElementById('key-opacity').value;
+            var size = parseInt(document.getElementById('key-size').value);
+            
+            var buttons = document.querySelectorAll('.virtual-btn:not(.jump)');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].style.opacity = opacity;
+                buttons[i].style.width = size + 'px';
+                buttons[i].style.height = size + 'px';
+            }
+            
+            var jumpBtns = document.querySelectorAll('.virtual-btn.jump');
+            for (var j = 0; j < jumpBtns.length; j++) {
+                jumpBtns[j].style.opacity = opacity;
+                jumpBtns[j].style.width = (size + 20) + 'px';
+                jumpBtns[j].style.height = (size + 20) + 'px';
+            }
+        }
+
+        function saveSettings() {
+            var settings = {
+                keyBindings: keyBindings,
+                showVirtualKeys: document.getElementById('show-virtual-keys').checked,
+                keyOpacity: document.getElementById('key-opacity').value,
+                keySize: document.getElementById('key-size').value
+            };
+            localStorage.setItem('gameSettings', JSON.stringify(settings));
+            
+            var swfFile = document.getElementById('swf-file-settings').files[0];
+            if (swfFile) {
+                currentSwfUrl = URL.createObjectURL(swfFile);
+                loadSwf(currentSwfUrl);
+                showMessage('SWF已加载', true);
+            }
+            
+            if (settings.showVirtualKeys) {
+                document.getElementById('virtual-keys').classList.remove('hidden');
+            } else {
+                document.getElementById('virtual-keys').classList.add('hidden');
+            }
+            
+            showMessage('设置已保存', true);
+            setTimeout(function() { toggleSettings(); }, 500);
+        }
+
+        function loadSettings() {
+            var saved = localStorage.getItem('gameSettings');
+            if (saved) {
+                var s = JSON.parse(saved);
+                for (var key in s.keyBindings) {
+                    if (s.keyBindings.hasOwnProperty(key)) {
+                        keyBindings[key] = s.keyBindings[key];
+                    }
+                }
+                
+                document.getElementById('key-left').value = keyDisplayMap[keyBindings.left] || keyBindings.left;
+                document.getElementById('key-right').value = keyDisplayMap[keyBindings.right] || keyBindings.right;
+                document.getElementById('key-jump').value = keyDisplayMap[keyBindings.jump] || keyBindings.jump;
+                document.getElementById('key-left-p2').value = keyDisplayMap[keyBindings['left-p2']] || keyBindings['left-p2'];
+                document.getElementById('key-right-p2').value = keyDisplayMap[keyBindings['right-p2']] || keyBindings['right-p2'];
+                document.getElementById('key-jump-p2').value = keyDisplayMap[keyBindings['jump-p2']] || keyBindings['jump-p2'];
+                document.getElementById('key-enter').value = keyDisplayMap[keyBindings.enter] || keyBindings.enter;
+                
+                document.getElementById('show-virtual-keys').checked = s.showVirtualKeys !== false;
+                document.getElementById('key-opacity').value = s.keyOpacity || 0.7;
+                document.getElementById('key-size').value = s.keySize || 65;
+                
+                updateKeyStyle();
+            }
+        }
+
+        function getSaveSlots() {
+            var slots = localStorage.getItem('gameSaveSlots');
+            return slots ? JSON.parse(slots) : [];
+        }
+
+        function saveSaveSlots(slots) {
+            localStorage.setItem('gameSaveSlots', JSON.stringify(slots));
+        }
+
+        function loadSaveSlots() {
+            var slots = getSaveSlots();
+            var container = document.getElementById('save-slots');
+            
+            if (slots.length === 0) {
+                container.innerHTML = '<p style="color:#666;font-size:12px;">暂无存档</p>';
+                return;
+            }
+            
+            var html = '';
+            for (var i = 0; i < slots.length; i++) {
+                var slot = slots[i];
+                var modeInfo = SAVE_MODE_INFO[slot.mode] || SAVE_MODE_INFO['single'];
+                html += '<div class="save-slot">';
+                html += '<div class="save-slot-header">';
+                html += '<span class="save-slot-name">' + slot.name + '</span>';
+                html += '<span class="mode-badge ' + modeInfo.badge + '">' + modeInfo.name + '</span>';
+                html += '</div>';
+                html += '<div class="save-slot-info">';
+                if (slot.roomCode) {
+                    html += '房间: ' + slot.roomCode + ' | ';
+                }
+                html += '时间: ' + slot.time;
+                html += '</div>';
+                html += '<div class="save-slot-actions">';
+                html += '<button class="btn-primary" onclick="loadSaveSlot(' + i + ')">读取</button>';
+                html += '<button class="btn-primary" onclick="deleteSaveSlot(' + i + ')" style="background:#ff6b6b;">删除</button>';
+                html += '</div>';
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function showSaveDialog() {
+            var name = prompt('请输入存档名称:');
+            if (!name) return;
+            
+            var mode = confirm('是否为联机模式？\n确定=联机模式\n取消=单人模式') ? SAVE_MODES.MULTI : SAVE_MODES.SINGLE;
+            
+            var saveData = {
+                name: name,
+                mode: mode,
+                time: new Date().toLocaleString(),
+                roomCode: gameStarted ? roomCode : null,
+                swfUrl: currentSwfUrl,
+                keyBindings: keyBindings
+            };
+            
+            var slots = getSaveSlots();
+            if (slots.length >= 5) {
+                showMessage('最多保存5个存档，请先删除旧存档');
+                return;
+            }
+            
+            slots.push(saveData);
+            saveSaveSlots(slots);
+            loadSaveSlots();
+            showMessage('存档已保存: ' + name, true);
+        }
+
+        function loadSaveSlot(index) {
+            var slots = getSaveSlots();
+            if (!slots[index]) return;
+            
+            var slot = slots[index];
+            
+            if (slot.keyBindings) {
+                keyBindings = slot.keyBindings;
+                document.getElementById('key-left').value = keyDisplayMap[keyBindings.left] || keyBindings.left;
+                document.getElementById('key-right').value = keyDisplayMap[keyBindings.right] || keyBindings.right;
+                document.getElementById('key-jump').value = keyDisplayMap[keyBindings.jump] || keyBindings.jump;
+                document.getElementById('key-left-p2').value = keyDisplayMap[keyBindings['left-p2']] || keyBindings['left-p2'];
+                document.getElementById('key-right-p2').value = keyDisplayMap[keyBindings['right-p2']] || keyBindings['right-p2'];
+                document.getElementById('key-jump-p2').value = keyDisplayMap[keyBindings['jump-p2']] || keyBindings['jump-p2'];
+            }
+            
+            if (slot.swfUrl && slot.swfUrl !== currentSwfUrl) {
+                currentSwfUrl = slot.swfUrl;
+                loadSwf(currentSwfUrl);
+            }
+            
+            currentSaveSlot = slot;
+            
+            if (slot.mode === SAVE_MODES.MULTI && slot.roomCode) {
+                document.getElementById('room-code').value = slot.roomCode;
+            }
+            
+            showMessage('已读取存档: ' + slot.name, true);
+        }
+
+        function deleteSaveSlot(index) {
+            if (!confirm('确定要删除这个存档吗？')) return;
+            
+            var slots = getSaveSlots();
+            var name = slots[index].name;
+            slots.splice(index, 1);
+            saveSaveSlots(slots);
+            loadSaveSlots();
+            showMessage('已删除存档: ' + name);
+        }
+
+        function saveGameData(data) {
+            if (!currentSaveSlot) return;
+            
+            var slots = getSaveSlots();
+            for (var i = 0; i < slots.length; i++) {
+                if (slots[i].name === currentSaveSlot.name) {
+                    slots[i].roomCode = data.roomCode || slots[i].roomCode;
+                    slots[i].time = new Date().toLocaleString();
+                    break;
+                }
+            }
+            saveSaveSlots(slots);
+        }
+
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
