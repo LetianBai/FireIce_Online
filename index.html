@@ -1196,15 +1196,17 @@
             return null;
         }
 
-        function handleKeyAction(action, isDown, keyCode) {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'key',
-                    action: action,
-                    down: isDown,
-                    playerId: playerId,
-                    keyCode: keyCode
-                }));
+        function handleKeyAction(action, isDown, keyCode, isLocal) {
+            if (isLocal !== false) {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'key',
+                        action: action,
+                        down: isDown,
+                        playerId: playerId,
+                        keyCode: keyCode
+                    }));
+                }
             }
             
             if (gameEmbed && window.flashSendKey) {
@@ -1236,6 +1238,11 @@
                     if (currentSaveSlot) {
                         saveGameData({ roomCode: roomCode, mode: SAVE_MODES.MULTI });
                     }
+                    if (!isHost && ws && ws.readyState === WebSocket.OPEN) {
+                        setTimeout(function() {
+                            ws.send(JSON.stringify({ type: 'sync' }));
+                        }, 500);
+                    }
                     break;
                 case 'players':
                     updatePlayerList(data.players);
@@ -1254,6 +1261,22 @@
                 case 'roomClosed':
                     showMessage('房间已关闭');
                     leaveRoom();
+                    break;
+                case 'syncRequest':
+                    if (isHost && data.requestPlayerId) {
+                        ws.send(JSON.stringify({
+                            type: 'syncResponse',
+                            targetPlayerId: data.requestPlayerId,
+                            swfUrl: currentSwfUrl
+                        }));
+                    }
+                    break;
+                case 'syncResponse':
+                    if (data.swfUrl && data.swfUrl !== currentSwfUrl) {
+                        currentSwfUrl = data.swfUrl;
+                        loadSwf(currentSwfUrl);
+                        console.log('已同步游戏文件');
+                    }
                     break;
             }
         }

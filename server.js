@@ -209,11 +209,24 @@ wss.on('connection', (ws) => {
                 case 'key': {
                     if (!roomCode || !rooms.has(roomCode)) return;
 
+                    const room = rooms.get(roomCode);
+                    const player = room.players.find(p => p.id === playerId);
+                    
+                    if (!player || !player.allowedKeys) {
+                        return;
+                    }
+                    
+                    if (!player.allowedKeys.includes(data.keyCode)) {
+                        console.log(`玩家 ${player.name} 尝试使用未授权的按键: ${data.keyCode}`);
+                        return;
+                    }
+
                     broadcastToRoom(roomCode, {
                         type: 'key',
                         action: data.action,
                         down: data.down,
-                        playerId: playerId
+                        playerId: playerId,
+                        keyCode: data.keyCode
                     }, playerId);
                     break;
                 }
@@ -266,6 +279,36 @@ wss.on('connection', (ws) => {
                             playerName: player.name,
                             message: data.message
                         });
+                    }
+                    break;
+                }
+                
+                case 'sync': {
+                    if (!roomCode || !rooms.has(roomCode)) return;
+                    
+                    const room = rooms.get(roomCode);
+                    const hostPlayer = room.players.find(p => p.isHost);
+                    
+                    if (hostPlayer && hostPlayer.ws && hostPlayer.ws.readyState === WebSocket.OPEN) {
+                        hostPlayer.ws.send(JSON.stringify({
+                            type: 'syncRequest',
+                            requestPlayerId: playerId
+                        }));
+                    }
+                    break;
+                }
+                
+                case 'syncResponse': {
+                    if (!roomCode || !rooms.has(roomCode)) return;
+                    
+                    const room = rooms.get(roomCode);
+                    const targetPlayer = room.players.find(p => p.id === data.targetPlayerId);
+                    
+                    if (targetPlayer && targetPlayer.ws && targetPlayer.ws.readyState === WebSocket.OPEN) {
+                        targetPlayer.ws.send(JSON.stringify({
+                            type: 'syncResponse',
+                            swfUrl: data.swfUrl
+                        }));
                     }
                     break;
                 }
