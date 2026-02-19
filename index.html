@@ -717,18 +717,18 @@
             </div>
 
             <div id="virtual-keys" class="hidden">
-                <div class="key-group key-group-p1">
+                <div class="key-group key-group-p1" id="key-group-p1">
                     <div class="key-row">
                         <div class="key-horizontal">
-                            <div class="virtual-btn" data-action="left-p2" data-player="p1">
+                            <div class="virtual-btn" data-action="left" data-player="p1">
                                 ◀<span class="key-label">P1</span>
                             </div>
-                            <div class="virtual-btn" data-action="right-p2" data-player="p1">▶</div>
+                            <div class="virtual-btn" data-action="right" data-player="p1">▶</div>
                         </div>
                     </div>
-                    <div class="virtual-btn jump" data-action="jump-p2" data-player="p1">▲</div>
+                    <div class="virtual-btn jump" data-action="jump" data-player="p1">▲</div>
                 </div>
-                <div class="key-group key-group-p2">
+                <div class="key-group key-group-p2" id="key-group-p2">
                     <div class="virtual-btn jump" data-action="jump-p2" data-player="p2">▲</div>
                     <div class="key-row">
                         <div class="key-horizontal">
@@ -868,6 +868,7 @@
         var playerId = '';
         var gameStarted = false;
         var currentSaveSlot = null;
+        var playerRole = null; // 'p1' 或 'p2'
         
         var keyBindings = {
             left: 'KeyA',
@@ -886,6 +887,9 @@
         };
         
         var virtualKeyMap = {
+            'left': 'KeyA',
+            'right': 'KeyD',
+            'jump': 'KeyW',
             'left-p2': 'ArrowLeft',
             'right-p2': 'ArrowRight',
             'jump-p2': 'ArrowUp'
@@ -1134,6 +1138,8 @@
                     break;
                 case 'players':
                     updatePlayerList(data.players);
+                    assignPlayerRole(data.players);
+                    updateVirtualKeysVisibility();
                     break;
                 case 'key':
                     if (data.playerId !== playerId && data.keyCode) {
@@ -1148,6 +1154,38 @@
                     showMessage('房间已关闭');
                     leaveRoom();
                     break;
+            }
+        }
+        
+        function assignPlayerRole(players) {
+            // 根据玩家在列表中的位置分配角色
+            var playerIndex = players.findIndex(p => p.id === playerId);
+            if (playerIndex === 0) {
+                playerRole = 'p1';
+            } else if (playerIndex === 1) {
+                playerRole = 'p2';
+            } else {
+                // 超过两个玩家时，默认分配为观众
+                playerRole = null;
+            }
+        }
+        
+        function updateVirtualKeysVisibility() {
+            var keyGroupP1 = document.getElementById('key-group-p1');
+            var keyGroupP2 = document.getElementById('key-group-p2');
+            
+            if (keyGroupP1 && keyGroupP2) {
+                if (playerRole === 'p1') {
+                    keyGroupP1.style.display = 'flex';
+                    keyGroupP2.style.display = 'none';
+                } else if (playerRole === 'p2') {
+                    keyGroupP1.style.display = 'none';
+                    keyGroupP2.style.display = 'flex';
+                } else {
+                    // 观众模式，不显示虚拟按键
+                    keyGroupP1.style.display = 'none';
+                    keyGroupP2.style.display = 'none';
+                }
             }
         }
 
@@ -1192,6 +1230,7 @@
             gameStarted = false;
             roomCode = '';
             playerId = '';
+            playerRole = null;
             showLobby();
         }
 
