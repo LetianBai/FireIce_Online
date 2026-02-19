@@ -85,7 +85,9 @@ wss.on('connection', (ws) => {
                             id: playerId,
                             name: playerName,
                             ws: ws,
-                            isHost: false
+                            isHost: false,
+                            role: null,
+                            allowedKeys: null
                         };
                         room.players.push(player);
                         room.swfUrl = data.swfUrl || room.swfUrl;
@@ -102,7 +104,9 @@ wss.on('connection', (ws) => {
                             players: room.players.map(p => ({
                                 id: p.id,
                                 name: p.name,
-                                isHost: p.isHost
+                                isHost: p.isHost,
+                                role: p.role,
+                                allowedKeys: p.allowedKeys
                             }))
                         }, playerId);
 
@@ -115,7 +119,9 @@ wss.on('connection', (ws) => {
                                 id: playerId,
                                 name: playerName,
                                 ws: ws,
-                                isHost: true
+                                isHost: true,
+                                role: 'p1',
+                                allowedKeys: ['KeyA', 'KeyD', 'KeyW']
                             }],
                             swfUrl: data.swfUrl || null,
                             createdAt: Date.now()
@@ -126,7 +132,9 @@ wss.on('connection', (ws) => {
                             type: 'joined',
                             playerId: playerId,
                             roomCode: roomCode,
-                            isHost: true
+                            isHost: true,
+                            role: 'p1',
+                            allowedKeys: ['KeyA', 'KeyD', 'KeyW']
                         }));
 
                         broadcastToRoom(roomCode, {
@@ -134,12 +142,65 @@ wss.on('connection', (ws) => {
                             players: room.players.map(p => ({
                                 id: p.id,
                                 name: p.name,
-                                isHost: p.isHost
+                                isHost: p.isHost,
+                                role: p.role,
+                                allowedKeys: p.allowedKeys
                             }))
                         }, playerId);
 
                         console.log(`创建新房间 ${roomCode}, 房主: ${playerName}`);
                     }
+                    break;
+                }
+                
+                case 'setRole': {
+                    if (!roomCode || !rooms.has(roomCode)) return;
+                    
+                    const room = rooms.get(roomCode);
+                    const hostPlayer = room.players.find(p => p.id === playerId);
+                    
+                    if (!hostPlayer || !hostPlayer.isHost) {
+                        ws.send(JSON.stringify({
+                            type: 'error',
+                            message: '只有房主可以分配角色'
+                        }));
+                        return;
+                    }
+                    
+                    const targetPlayerId = data.targetPlayerId;
+                    const newRole = data.role;
+                    
+                    const targetPlayer = room.players.find(p => p.id === targetPlayerId);
+                    if (!targetPlayer) {
+                        ws.send(JSON.stringify({
+                            type: 'error',
+                            message: '玩家不存在'
+                        }));
+                        return;
+                    }
+                    
+                    targetPlayer.role = newRole;
+                    
+                    if (newRole === 'p1') {
+                        targetPlayer.allowedKeys = ['KeyA', 'KeyD', 'KeyW'];
+                    } else if (newRole === 'p2') {
+                        targetPlayer.allowedKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp'];
+                    } else {
+                        targetPlayer.allowedKeys = null;
+                    }
+                    
+                    broadcastToRoom(roomCode, {
+                        type: 'players',
+                        players: room.players.map(p => ({
+                            id: p.id,
+                            name: p.name,
+                            isHost: p.isHost,
+                            role: p.role,
+                            allowedKeys: p.allowedKeys
+                        }))
+                    });
+                    
+                    console.log(`角色分配: ${targetPlayer.name} -> ${newRole}`);
                     break;
                 }
 

@@ -584,6 +584,72 @@
             color: #ff9632;
         }
 
+        .role-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-left: 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .role-badge:hover {
+            border-color: #fff;
+        }
+
+        .role-p1 {
+            background: rgba(74, 158, 255, 0.3);
+            color: #4a9eff;
+        }
+
+        .role-p2 {
+            background: rgba(255, 100, 100, 0.3);
+            color: #ff6464;
+        }
+
+        .role-none {
+            background: rgba(128, 128, 128, 0.3);
+            color: #888;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .player-item:last-child {
+            border-bottom: none;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .role-select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #4a9eff;
+            border-radius: 4px;
+            color: #4a9eff;
+            font-size: 10px;
+            padding: 2px 6px;
+            cursor: pointer;
+        }
+
+        .role-select:focus {
+            outline: none;
+            border-color: #fff;
+        }
+
+        #game-area.host-mode {
+            cursor: pointer;
+        }
+
         #message {
             position: fixed;
             top: 60px;
@@ -869,6 +935,9 @@
         var gameStarted = false;
         var currentSaveSlot = null;
         var playerRole = null; // 'p1' 或 'p2'
+        var isHost = false;
+        var allowedKeys = null;
+        var players = [];
         
         var keyBindings = {
             left: 'KeyA',
@@ -1015,6 +1084,10 @@
             document.addEventListener('keydown', function(e) {
                 if (e.target.tagName === 'INPUT') return;
                 
+                if (!isAllowedKey(e.code)) {
+                    return;
+                }
+                
                 var action = getKeyAction(e.code);
                 if (action && !activeKeys[action]) {
                     activeKeys[action] = true;
@@ -1026,6 +1099,10 @@
             document.addEventListener('keyup', function(e) {
                 if (e.target.tagName === 'INPUT') return;
                 
+                if (!isAllowedKey(e.code)) {
+                    return;
+                }
+                
                 var action = getKeyAction(e.code);
                 if (action) {
                     delete activeKeys[action];
@@ -1033,6 +1110,13 @@
                     updateVirtualKeyState(action, false);
                 }
             });
+        }
+        
+        function isAllowedKey(code) {
+            if (!allowedKeys) {
+                return false;
+            }
+            return allowedKeys.indexOf(code) !== -1;
         }
 
         function setupVirtualKeys() {
@@ -1130,6 +1214,9 @@
                 case 'joined':
                     roomCode = data.roomCode;
                     playerId = data.playerId;
+                    isHost = data.isHost || false;
+                    playerRole = data.role || null;
+                    allowedKeys = data.allowedKeys || null;
                     gameStarted = true;
                     updateUI();
                     if (currentSaveSlot) {
@@ -1157,17 +1244,13 @@
             }
         }
         
-        function assignPlayerRole(players) {
-            // 根据玩家在列表中的位置分配角色
-            var playerIndex = players.findIndex(p => p.id === playerId);
-            if (playerIndex === 0) {
-                playerRole = 'p1';
-            } else if (playerIndex === 1) {
-                playerRole = 'p2';
-            } else {
-                // 超过两个玩家时，默认分配为观众
-                playerRole = null;
+        function assignPlayerRole(playersData) {
+            var currentPlayer = playersData.find(function(p) { return p.id === playerId; });
+            if (currentPlayer) {
+                playerRole = currentPlayer.role;
+                allowedKeys = currentPlayer.allowedKeys;
             }
+            updateVirtualKeysVisibility();
         }
         
         function updateVirtualKeysVisibility() {
@@ -1182,10 +1265,16 @@
                     keyGroupP1.style.display = 'none';
                     keyGroupP2.style.display = 'flex';
                 } else {
-                    // 观众模式，不显示虚拟按键
                     keyGroupP1.style.display = 'none';
                     keyGroupP2.style.display = 'none';
                 }
+            }
+            
+            var gameArea = document.getElementById('game-area');
+            if (isHost) {
+                gameArea.classList.add('host-mode');
+            } else {
+                gameArea.classList.remove('host-mode');
             }
         }
 
@@ -1231,6 +1320,9 @@
             roomCode = '';
             playerId = '';
             playerRole = null;
+            isHost = false;
+            allowedKeys = null;
+            players = [];
             showLobby();
         }
 
@@ -1266,14 +1358,47 @@
             }
         }
 
-        function updatePlayerList(players) {
+        function updatePlayerList(playersData) {
+            players = playersData;
             var list = document.getElementById('players');
             var html = '';
-            for (var i = 0; i < players.length; i++) {
-                var p = players[i];
-                html += '<li>' + p.name + (p.id === playerId ? ' (你)' : '') + (p.isHost ? ' 👑' : '') + '</li>';
+            for (var i = 0; i < playersData.length; i++) {
+                var p = playersData[i];
+                var isMe = p.id === playerId;
+                var roleClass = p.role === 'p1' ? 'role-p1' : (p.role === 'p2' ? 'role-p2' : 'role-none');
+                var roleText = p.role === 'p1' ? 'P1' : (p.role === 'p2' ? 'P2' : '待分配');
+                
+                html += '<li class="player-item">';
+                html += '<div class="player-info">';
+                html += p.name;
+                if (isMe) html += ' (你)';
+                if (p.isHost) html += ' 👑';
+                
+                if (isHost && !p.isHost) {
+                    html += '<select class="role-select" onchange="changeRole(\'' + p.id + '\', this.value)">';
+                    html += '<option value="" ' + (!p.role ? 'selected' : '') + '>待分配</option>';
+                    html += '<option value="p1" ' + (p.role === 'p1' ? 'selected' : '') + '>P1</option>';
+                    html += '<option value="p2" ' + (p.role === 'p2' ? 'selected' : '') + '>P2</option>';
+                    html += '<option value="spectator" ' + (p.role === 'spectator' ? 'selected' : '') + '>观众</option>';
+                    html += '</select>';
+                } else {
+                    html += '<span class="role-badge ' + roleClass + '">' + roleText + '</span>';
+                }
+                
+                html += '</div>';
+                html += '</li>';
             }
             list.innerHTML = html;
+        }
+        
+        function changeRole(targetPlayerId, newRole) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            
+            ws.send(JSON.stringify({
+                type: 'setRole',
+                targetPlayerId: targetPlayerId,
+                role: newRole
+            }));
         }
 
         function copyRoomCode() {
