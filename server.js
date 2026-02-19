@@ -96,7 +96,9 @@ wss.on('connection', (ws) => {
                             type: 'joined',
                             playerId: playerId,
                             roomCode: roomCode,
-                            isHost: false
+                            isHost: false,
+                            role: null,
+                            allowedKeys: null
                         }));
 
                         broadcastToRoom(roomCode, {

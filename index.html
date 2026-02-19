@@ -1125,7 +1125,17 @@
                 (function(btn) {
                     var action = btn.getAttribute('data-action');
                     
+                    function canUseButton() {
+                        if (playerRole === 'p1') {
+                            return action === 'left' || action === 'right' || action === 'jump';
+                        } else if (playerRole === 'p2') {
+                            return action === 'left-p2' || action === 'right-p2' || action === 'jump-p2';
+                        }
+                        return false;
+                    }
+                    
                     btn.addEventListener('touchstart', function(e) {
+                        if (!canUseButton()) return;
                         e.preventDefault();
                         var keyCode = virtualKeyMap[action];
                         handleKeyAction(action, true, keyCode);
@@ -1133,6 +1143,7 @@
                     }, { passive: false });
                     
                     btn.addEventListener('touchend', function(e) {
+                        if (!canUseButton()) return;
                         e.preventDefault();
                         var keyCode = virtualKeyMap[action];
                         handleKeyAction(action, false, keyCode);
@@ -1140,6 +1151,7 @@
                     }, { passive: false });
                     
                     btn.addEventListener('mousedown', function(e) {
+                        if (!canUseButton()) return;
                         e.preventDefault();
                         var keyCode = virtualKeyMap[action];
                         handleKeyAction(action, true, keyCode);
@@ -1147,6 +1159,7 @@
                     });
                     
                     btn.addEventListener('mouseup', function(e) {
+                        if (!canUseButton()) return;
                         e.preventDefault();
                         var keyCode = virtualKeyMap[action];
                         handleKeyAction(action, false, keyCode);
@@ -1154,6 +1167,7 @@
                     });
                     
                     btn.addEventListener('mouseleave', function(e) {
+                        if (!canUseButton()) return;
                         var keyCode = virtualKeyMap[action];
                         handleKeyAction(action, false, keyCode);
                         btn.classList.remove('pressed');
@@ -1356,6 +1370,8 @@
             if (showVirtual) {
                 document.getElementById('virtual-keys').classList.remove('hidden');
             }
+            
+            updateVirtualKeysVisibility();
         }
 
         function updatePlayerList(playersData) {
